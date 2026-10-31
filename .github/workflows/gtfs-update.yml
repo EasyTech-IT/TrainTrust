@@ -35,6 +35,7 @@ jobs:
           GTFS_STATE_PATH: gtfs-state/version.txt
 
       - name: Prüfe Server-Zugang
+        id: server
         if: steps.feed.outputs.needsImport == 'true'
         env:
           DEPLOY_HOST: ${{ secrets.GTFS_DEPLOY_HOST }}
@@ -47,8 +48,14 @@ jobs:
           set -eu
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
           if [ -z "${DEPLOY_HOST:-}" ] || [ -z "${DEPLOY_USER:-}" ] || [ -z "${DEPLOY_PATH:-}" ] || [ -z "${DEPLOY_SSH_KEY:-}" ] || [ -z "${DEPLOY_KNOWN_HOSTS:-}" ]; then
-            echo "::error::Erforderliche GTFS-Deploy-Secrets fehlen."
-            exit 1
+            echo "::warning::GTFS-Deploy-Secrets fehlen. Der Fahrplanimport wird übersprungen und beim nächsten Lauf erneut versucht."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### GTFS-Import übersprungen"
+              echo "Der Serverzugang ist noch nicht eingerichtet. Der Import wird beim nächsten Lauf erneut versucht; die ausstehende Feed-Version wurde nicht als importiert gespeichert."
+              echo "Erforderliche Secrets: \`GTFS_DEPLOY_HOST\`, \`GTFS_DEPLOY_USER\`, \`GTFS_DEPLOY_PATH\`, \`GTFS_DEPLOY_SSH_KEY\` und \`GTFS_DEPLOY_KNOWN_HOSTS\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
           if ! [[ "$DEPLOY_HOST" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] || ! [[ "$DEPLOY_USER" =~ ^[A-Za-z0-9._-]+$ ]]; then
             echo "::error::GTFS_DEPLOY_HOST oder GTFS_DEPLOY_USER ist ungültig."
@@ -64,9 +71,10 @@ jobs:
             echo "::error::GTFS_DEPLOY_PATH darf nur Buchstaben, Zahlen, Punkt, Unterstrich, Schrägstrich und Bindestrich enthalten."
             exit 1
           fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Lade geänderten Feed herunter
-        if: steps.feed.outputs.needsImport == 'true'
+        if: steps.feed.outputs.needsImport == 'true' && steps.server.outputs.configured == 'true'
         run: |
           set -eu
           curl --fail --location --retry 3 --output "$RUNNER_TEMP/latest.zip" \
@@ -74,7 +82,7 @@ jobs:
           unzip -tq "$RUNNER_TEMP/latest.zip"
 
       - name: Importiere Feed auf dem Server
-        if: steps.feed.outputs.needsImport == 'true'
+        if: steps.feed.outputs.needsImport == 'true' && steps.server.outputs.configured == 'true'
         env:
           DEPLOY_HOST: ${{ secrets.GTFS_DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.GTFS_DEPLOY_PORT }}
@@ -105,7 +113,7 @@ jobs:
           ssh_remote "$TARGET" "set -eu; unzip -oq $REMOTE_TMP/feed.zip -d $REMOTE_TMP/full; cd $DEPLOY_PATH; php db/import_gtfs.php --dir=$REMOTE_TMP/full --date=\$(TZ=Europe/Berlin date +%F); rm -f $REMOTE_TMP/feed.zip; find $REMOTE_TMP/full -type f -delete; find $REMOTE_TMP/full -depth -type d -empty -delete; rmdir $REMOTE_TMP"
 
       - uses: actions/cache/save@v4
-        if: success()
+        if: success() && (steps.feed.outputs.needsImport != 'true' || steps.server.outputs.configured == 'true')
         with:
           path: gtfs-state
           key: gtfs-state-${{ github.run_id }}
