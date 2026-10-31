@@ -1,0 +1,111 @@
+name: Aktualisiere Deutschland-Fahrplan
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gtfs-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: gtfs-state
+          key: gtfs-state-${{ github.run_id }}
+          restore-keys: gtfs-state-
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prüfe Feed-Version
+        id: feed
+        run: node scripts/check-gtfs-update.js
+        env:
+          GTFS_STATE_PATH: gtfs-state/version.txt
+
+      - name: Prüfe Server-Zugang
+        if: steps.feed.outputs.needsImport == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.GTFS_DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.GTFS_DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.GTFS_DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.GTFS_DEPLOY_PATH }}
+          DEPLOY_SSH_KEY: ${{ secrets.GTFS_DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.GTFS_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          if [ -z "${DEPLOY_HOST:-}" ] || [ -z "${DEPLOY_USER:-}" ] || [ -z "${DEPLOY_PATH:-}" ] || [ -z "${DEPLOY_SSH_KEY:-}" ] || [ -z "${DEPLOY_KNOWN_HOSTS:-}" ]; then
+            echo "::error::Erforderliche GTFS-Deploy-Secrets fehlen."
+            exit 1
+          fi
+          if ! [[ "$DEPLOY_HOST" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] || ! [[ "$DEPLOY_USER" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::GTFS_DEPLOY_HOST oder GTFS_DEPLOY_USER ist ungültig."
+            exit 1
+          fi
+          case "$DEPLOY_PORT" in *[!0-9]*|'') echo "::error::GTFS_DEPLOY_PORT muss numerisch sein."; exit 1 ;; esac
+          if [ "$((10#$DEPLOY_PORT))" -lt 1 ] || [ "$((10#$DEPLOY_PORT))" -gt 65535 ]; then
+            echo "::error::GTFS_DEPLOY_PORT muss zwischen 1 und 65535 liegen."
+            exit 1
+          fi
+          case "$DEPLOY_PATH" in /*) ;; *) echo "::error::GTFS_DEPLOY_PATH muss ein absoluter Unix-Pfad sein."; exit 1 ;; esac
+          if printf '%s' "$DEPLOY_PATH" | grep -q '[^A-Za-z0-9_./-]'; then
+            echo "::error::GTFS_DEPLOY_PATH darf nur Buchstaben, Zahlen, Punkt, Unterstrich, Schrägstrich und Bindestrich enthalten."
+            exit 1
+          fi
+
+      - name: Lade geänderten Feed herunter
+        if: steps.feed.outputs.needsImport == 'true'
+        run: |
+          set -eu
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/latest.zip" \
+            https://download.gtfs.de/germany/free/latest.zip
+          unzip -tq "$RUNNER_TEMP/latest.zip"
+
+      - name: Importiere Feed auf dem Server
+        if: steps.feed.outputs.needsImport == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.GTFS_DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.GTFS_DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.GTFS_DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.GTFS_DEPLOY_PATH }}
+          DEPLOY_SSH_KEY: ${{ secrets.GTFS_DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.GTFS_DEPLOY_KNOWN_HOSTS }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -eu
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/gtfs_deploy_key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/gtfs_deploy_key" "$HOME/.ssh/known_hosts"
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          ssh_remote() {
+            ssh -i "$HOME/.ssh/gtfs_deploy_key" -o IdentitiesOnly=yes \
+              -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -p "$DEPLOY_PORT" "$@"
+          }
+          scp_file() {
+            scp -i "$HOME/.ssh/gtfs_deploy_key" -o IdentitiesOnly=yes \
+              -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -P "$DEPLOY_PORT" "$@"
+          }
+          TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+          REMOTE_TMP="/tmp/traintrust-gtfs-$RUN_ID"
+          ssh_remote "$TARGET" "mkdir -p $REMOTE_TMP/full"
+          scp_file "$RUNNER_TEMP/latest.zip" "$TARGET:$REMOTE_TMP/feed.zip"
+          ssh_remote "$TARGET" "set -eu; unzip -oq $REMOTE_TMP/feed.zip -d $REMOTE_TMP/full; cd $DEPLOY_PATH; php db/import_gtfs.php --dir=$REMOTE_TMP/full --date=\$(TZ=Europe/Berlin date +%F); rm -f $REMOTE_TMP/feed.zip; find $REMOTE_TMP/full -type f -delete; find $REMOTE_TMP/full -depth -type d -empty -delete; rmdir $REMOTE_TMP"
+
+      - uses: actions/cache/save@v4
+        if: success()
+        with:
+          path: gtfs-state
+          key: gtfs-state-${{ github.run_id }}

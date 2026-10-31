@@ -1,0 +1,15 @@
+.env
+node_modules/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+android/app/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+*.jks
+*.keystore
+keystore.properties
+.DS_Store
+www/
+.playwright-mcp/

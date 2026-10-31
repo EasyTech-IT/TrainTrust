@@ -1,0 +1,41 @@
+{
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[php]": {
+    "editor.defaultFormatter": "bmewburn.vscode-intelephense-client",
+    "editor.tabSize": 4
+  },
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.encoding": "utf8",
+
+  "php.validate.enable": true,
+  "php.validate.executablePath": "C:\\Users\\ahsin\\AppData\\Local\\Microsoft\\WinGet\\Packages\\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\\php.exe",
+  "php.suggest.basic": false,
+  "intelephense.environment.phpVersion": "8.4.0",
+  "intelephense.files.exclude": ["**/node_modules/**", "**/android/**", "**/www/**"],
+
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/android/**": true,
+    "**/www/**": true,
+    "**/*.sqlite*": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/android": true,
+    "**/www": true,
+    "**/package-lock.json": true
+  },
+  "files.exclude": {
+    "**/.playwright-mcp": true
+  },
+
+  "js/ts.implicitProjectConfig.checkJs": true,
+  "html.format.wrapLineLength": 120,
+  "cSpell.language": "en,de-DE",
+  "git.autofetch": false,
+  "python.terminal.useEnvFile": true
+}

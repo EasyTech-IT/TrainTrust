@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Train Trust · Admin</title>
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/app.css">
+  <style>
+    main { max-width: 1000px; }
+    .tabbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: .95rem; }
+    th { background: #EEF3F1; }
+    .tbl { overflow-x: auto; }
+    body { padding-bottom: 24px; }
+    .btn.sm { min-height: 44px; padding: 6px 12px; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <header class="topbar"><h1>Train Trust · Admin</h1><a class="btn secondary" href="./">Zur App</a></header>
+  <main id="view" tabindex="-1"></main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

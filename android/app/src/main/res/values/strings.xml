@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TrustTrain</string>
+    <string name="title_activity_main">TrustTrain</string>
+    <string name="package_name">de.traintrust.app</string>
+    <string name="custom_url_scheme">de.traintrust.app</string>
+</resources>

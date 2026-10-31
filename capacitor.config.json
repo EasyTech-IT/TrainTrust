@@ -1,0 +1,11 @@
+{
+  "appId": "de.traintrust.app",
+  "appName": "TrustTrain",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

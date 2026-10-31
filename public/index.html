@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color"   content="#0060EB">
+    <meta name="description" content="TrustTrain: Zugverbindungen mit Live-Meldungen von Fahrgästen.">
+    <title>TrustTrain</title>
+  <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/glass.css">
+</head>
+<body>
+  <div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+  <a class="skip" href="#view">Zum Inhalt springen</a>
+  <header class="topbar glass">
+    <a class="logo-orb" href="#/" aria-label="TrustTrain – Startseite"><img src="icons/icon-192.png" alt="" width="40" height="40"></a>
+    <button id="back" class="icon-btn" aria-label="Zurück" hidden></button>
+    <h1 id="title">TrustTrain</h1>
+    <span id="net" class="net" hidden>Offline</span>
+    <a id="bell" class="icon-btn glass-btn" href="#/alerts" aria-label="Hinweise"></a>
+    <a id="gear" class="icon-btn glass-btn" href="#/settings" aria-label="Einstellungen"></a>
+  </header>
+  <main id="view" tabindex="-1"></main>
+  <nav class="tabs glass" aria-label="Hauptmenü">
+    <a href="#/" data-tab="home"></a>
+    <a href="#/route" data-tab="route"></a>
+    <a href="#/map" data-tab="map"></a>
+    <a href="#/community" data-tab="community"></a>
+    <a href="#/account" data-tab="account"></a>
+  </nav>
+  <div id="sheet-root"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <noscript>TrustTrain braucht JavaScript.</noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

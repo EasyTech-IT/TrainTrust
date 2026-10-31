@@ -1,0 +1,32 @@
+{
+  "name": "train-trust",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Train Trust: Community-Zug-App (statisches HTML/JS-Frontend, PHP-API, SQLite)",
+  "scripts": {
+    "db:init": "php db/init.php",
+    "db:reset": "php db/init.php --reset",
+    "start": "php -S 127.0.0.1:8080 -t public router.php",
+    "test": "php tests/run.php",
+    "build:www": "node scripts/build-www.js",
+    "icons": "python scripts/make_icons.py",
+    "data:download": "node scripts/download-gtfs.js",
+    "data:check": "node scripts/check-gtfs-update.js",
+    "data:import": "php db/import_gtfs.php",
+    "data:poll": "php db/poll_realtime.php",
+    "cap:add": "npm run build:www && cap add android",
+    "cap:sync": "npm run build:www && cap sync android",
+    "cap:open": "cap open android",
+    "apk:debug": "npm run cap:sync && cd android && gradlew.bat assembleDebug",
+    "aab:release": "npm run cap:sync && cd android && gradlew.bat bundleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.0.0",
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}
