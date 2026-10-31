@@ -52,6 +52,12 @@ npm.cmd test             # alle Tests
 
 PHP 8.2+ mit `pdo_sqlite`, HTTPS-Reverse-Proxy (Caddy/Nginx). `public/` als Webroot, `/api/*` auf `api/index.php` leiten (analog zu `router.php`). `DB_PATH` auf ein beschreibbares, gesichertes Verzeichnis setzen und Backups einrichten. `.env` nie öffentlich ausliefern (liegt außerhalb von `public/`).
 
+## GitHub Pages
+
+Der Workflow `Deploy app to GitHub Pages` veröffentlicht den Inhalt von `public/` unter `https://easytech-it.github.io/TrainTrust/`. In den Repository-Einstellungen unter **Settings → Pages** muss als Quelle **GitHub Actions** ausgewählt sein.
+
+GitHub Pages kann nur statische Dateien ausliefern. Die PHP-API und SQLite-Datenbank laufen dort nicht; Verbindungssuche, Fahrplan, Konto und Community benötigen zusätzlich einen PHP-Server mit HTTPS. Erst wenn eine API-Adresse eingerichtet und für die Webseite freigegeben ist, funktionieren diese Funktionen online. Zugangsdaten und `.env` gehören nicht in GitHub Pages.
+
 ## Zahlungen
 
 Premium ist als **Demo** vorhanden (`PAYMENTS_MODE=demo`). Für digitale Abos in der Android-App schreibt Google die **Google Play Billing** vor (Stripe/PayPal sind dort nicht erlaubt). Nächster Schritt: Play-Billing-Plugin (z. B. RevenueCat) einbinden und die Käufe serverseitig in `/premium/…` prüfen. Erst nach den Tests der Preise mit der Warteliste.
